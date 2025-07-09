@@ -1,89 +1,110 @@
 <!DOCTYPE html>
 <html lang="az">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="./style.css">
+  <meta charset="UTF-8" />
+  <title>İlan Oyunu</title>
+  <style>
+    body {
+      background-color: #222;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      font-family: sans-serif;
+    }
+    canvas {
+      border: 2px solid #0f0;
+      background-color: #000;
+    }
+    h2 {
+      color: white;
+      position: absolute;
+      top: 10px;
+    }
+  </style>
 </head>
-
 <body>
-    <div class="container">
-        <h1>💰 Xərc Hesablama Tətbiqi</h1>
+  <h2>İlan Oyunu - Ox düymələri ilə idarə et</h2>
+  <canvas id="game" width="400" height="400"></canvas>
 
-            <div class="stats-grid">
-            <div class="stat-card">
-                <h3 id="totalExpenses">0 ₼</h3>
-                <p>Ümumi Xərc</p>
-            </div>
-            <div class="stat-card">
-                <h3 id="totalCount">0</h3>
-                <p>Xərc Sayı</p>
-            </div>
-            <div class="stat-card">
-                <h3 id="avgExpense">0 ₼</h3>
-                <p>Orta Xərc</p>
-            </div>
-            <div class="stat-card">
-                <h3 id="todayExpenses">0 ₼</h3>
-                <p>Bugünkü Xərc</p>
-            </div>
-        </div>
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
 
-        <div class="form-section">
-            <h2>🆕 Yeni Xərc Əlavə Et</h2>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label for="description">Təsvir</label>
-                    <input type="text" id="description" placeholder="Məs: Market alış-verişi">
-                </div>
-                <div class="form-group">
-                    <label for="amount">Məbləğ (₼)</label>
-                    <input type="number" id="amount" placeholder="0.00" step="0.01">
-                </div>
-                <div class="form-group">
-                    <label for="category">Kateqoriya</label>
-                    <select id="category">
-                        <option value="Yemək">🍽️ Yemək</option>
-                        <option value="Nəqliyyat">🚗 Nəqliyyat</option>
-                        <option value="Alış-veriş">🛍️ Alış-veriş</option>
-                        <option value="Əyləncə">🎮 Əyləncə</option>
-                        <option value="Sağlamlıq">🏥 Sağlamlıq</option>
-                        <option value="Təhsil">📚 Təhsil</option>
-                        <option value="Kommunal">🏠 Kommunal</option>
-                        <option value="Digər">📦 Digər</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <button class="btn btn-primary" onclick="addExpense()">Əlavə Et</button>
-                </div>
-            </div>
-        </div>
+    const box = 20;
+    const canvasSize = 400;
+    const totalBoxes = canvasSize / box;
 
-        <div class="expenses-section">
-            <h2>📋 Xərc Siyahısı</h2>
+    let snake = [{ x: 9 * box, y: 9 * box }];
+    let food = {
+      x: Math.floor(Math.random() * totalBoxes) * box,
+      y: Math.floor(Math.random() * totalBoxes) * box
+    };
+    let direction = null;
+    let score = 0;
 
-            <!-- Category Filter -->
-            <div class="category-filter">
-                <span style="font-weight: bold;">Filtr:</span>
-                <button class="filter-btn active" onclick="filterExpenses('all')">Hamısı</button>
-                <button class="filter-btn" onclick="filterExpenses('Yemək')">Yemək</button>
-                <button class="filter-btn" onclick="filterExpenses('Nəqliyyat')">Nəqliyyat</button>
-                <button class="filter-btn" onclick="filterExpenses('Alış-veriş')">Alış-veriş</button>
-                <button class="filter-btn" onclick="filterExpenses('Əyləncə')">Əyləncə</button>
-                <button class="filter-btn" onclick="filterExpenses('Digər')">Digər</button>
-            </div>
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowUp" && direction !== "DOWN") direction = "UP";
+      else if (e.key === "ArrowDown" && direction !== "UP") direction = "DOWN";
+      else if (e.key === "ArrowLeft" && direction !== "RIGHT") direction = "LEFT";
+      else if (e.key === "ArrowRight" && direction !== "LEFT") direction = "RIGHT";
+    });
 
-            <div id="expensesList">
-                <div class="no-expenses">
-                    <p>Hələ heç bir xərc əlavə edilməyib. Yuxarıdakı formu dolduraraq başlayın!</p>
-                </div>
-            </div>
-        </div>
-    </div>
+    function draw() {
+      ctx.clearRect(0, 0, canvasSize, canvasSize);
 
+      // Rəsm çək
+      for (let i = 0; i < snake.length; i++) {
+        ctx.fillStyle = i === 0 ? "#0f0" : "#0a0";
+        ctx.fillRect(snake[i].x, snake[i].y, box, box);
+      }
 
-    <script src="./test.js"></script>
+      // Yemək
+      ctx.fillStyle = "red";
+      ctx.fillRect(food.x, food.y, box, box);
+
+      // Köhnə baş koordinatlarını götür
+      let headX = snake[0].x;
+      let headY = snake[0].y;
+
+      // İstiqamətə görə yeni baş
+      if (direction === "LEFT") headX -= box;
+      else if (direction === "RIGHT") headX += box;
+      else if (direction === "UP") headY -= box;
+      else if (direction === "DOWN") headY += box;
+      else return; // Başlanğıcda hərəkət etməsin
+
+      // Oyun bitmə şərtləri
+      if (
+        headX < 0 || headX >= canvasSize ||
+        headY < 0 || headY >= canvasSize ||
+        snake.some(segment => segment.x === headX && segment.y === headY)
+      ) {
+        clearInterval(game);
+        alert("Oyun bitdi! Xal: " + score);
+        location.reload();
+        return;
+      }
+
+      // Yeni baş
+      let newHead = { x: headX, y: headY };
+
+      // Yeməyi yedimi?
+      if (headX === food.x && headY === food.y) {
+        score++;
+        food = {
+          x: Math.floor(Math.random() * totalBoxes) * box,
+          y: Math.floor(Math.random() * totalBoxes) * box
+        };
+      } else {
+        snake.pop(); // quyruğu sil
+      }
+
+      snake.unshift(newHead);
+    }
+
+    let game = setInterval(draw, 150);
+  </script>
 </body>
-
 </html>
